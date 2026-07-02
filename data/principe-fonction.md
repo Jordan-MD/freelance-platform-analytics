@@ -1,54 +1,96 @@
-## 1. Génération de la graine (Seed) déterministe
+# Bilan — Génération du jeu de données (Thème B : Plateforme Freelance)
 
-- **Generation du grain :** La fonction `name_to_seed` prend ta chaîne `"JORDAN BENI MBEZOU DJAMEN"`, la passe en majuscules et supprime les espaces. Elle applique ensuite un algorithme de hachage polynomial (similaire à ce que fait Java pour les chaînes de caractères) :
-
-$$seed = (seed \times 31 + \text{valeur}) \pmod{2^{32} - 1}$$
-
-- **Importance :** Cela transforme ton nom en un entier unique et fixe sur 32 bits. En l'injectant dans `np.random.default_rng(SEED)`, tu garantis que le script générera **exactement** les mêmes données à chaque exécution sur n'importe quelle machine. De plus, l'utilisation de `default_rng` montre que tu utilises les standards modernes de NumPy.
+**Statut : ✅ TERMINÉ — prêt à être utilisé par Data Science et Dev**
 
 ---
 
-## 2. Définition des profils et mélange gaussien bivarié (Étapes 2 & 3)
+## 🟢 PARTIE 1 — Résumé accessible (pour tout le monde)
 
-Au lieu de générer des données purement aléatoires et plates, ton script crée une **population structurée**, ce qui est indispensable pour que l'équipe chargée de la Classification Non Supervisée (Question 3) puisse trouver des "groupes naturels".
+### Ce qu'on a fait
 
-- **Principe :** Il définit 3 profils latents (cachés) de freelances avec des caractéristiques différentes (proportions, moyennes et écarts-types pour le nombre de missions et le score de performance).
-- **La puissance statistique :** Pour chaque profil, il utilise une distribution normale multivariée (une gaussienne en 2D) :
+On a créé un jeu de données de **80 freelances fictifs**, généré automatiquement à partir du nom du chef de groupe (Jordan), de façon à ce que :
 
-$$\mathcal{N}(\mu, \Sigma)$$
+- **Personne d'autre au monde n'aura exactement les mêmes données** (chaque nom produit un résultat différent)
+- **Si on relance le script, on obtient toujours EXACTEMENT le même résultat** (c'est ce qu'on appelle "déterministe" — obligatoire selon l'énoncé du prof)
 
-La matrice de covariance $\Sigma$ intègre un coefficient de corrélation de `0.6`. Cela garantit que, mathématiquement, un freelance qui a beaucoup de missions aura tendance à avoir un meilleur score de performance, validant ainsi l'hypothèse de la Question 2.
+### Ce que chaque freelance a comme informations
 
-- **Taille de l'échantillon :** `80` individus. C'est un choix judicieux : suffisant pour faire du Machine Learning (évaluations univariée, bivariée, clustering, classification) tout en restant lisible dans un rapport écrit.
+| Donnée                           | Exemple                            | À quoi ça sert                                   |
+| -------------------------------- | ---------------------------------- | ------------------------------------------------ |
+| Domaine                          | Développeur / Designer / Rédacteur | Affichage seulement                              |
+| Années d'expérience              | 6.6 ans                            | Affichage seulement                              |
+| **Nombre de missions réalisées** | 44                                 | **Utilisé pour les calculs statistiques**        |
+| **Score de performance (0-100)** | 70.6                               | **Utilisé pour les calculs statistiques**        |
+| Tarif horaire                    | 5150 FCFA                          | Affichage seulement                              |
+| Temps de livraison moyen         | 5.9 jours                          | Affichage seulement                              |
+| Taux de réponse                  | 53.5%                              | Affichage seulement                              |
+| **Statut Premium/Standard**      | Premium                            | **C'est ce qu'on doit apprendre à prédire (Q4)** |
+
+Seules **2 variables** (nombre de missions + score de performance) et l'étiquette Premium/Standard rentrent dans les calculs notés. Le reste (domaine, tarif, expérience...) sert juste à rendre la plateforme réaliste visuellement.
+
+### Pourquoi les données ne sont pas "trop parfaites"
+
+On a volontairement mis du réalisme imparfait dans les données :
+
+- Le lien entre "nombre de missions" et "score" existe et est fort, mais **pas parfait** (il y a des exceptions)
+- L'étiquette Premium/Standard contient volontairement **8% d'erreurs** — pour simuler le fait que dans la vraie vie, l'équipe commerciale se trompe parfois en classant les gens "au feeling"
+
+**Pourquoi c'est important** : si les données étaient parfaites, la Q4 (prédiction automatique) donnerait 100% de réussite, ce qui n'aurait aucun intérêt à discuter à l'oral. Là, on a une vraie marge d'erreur (~80% de bonnes prédictions) qu'on peut analyser et commenter.
+
+### Chiffres clés à retenir pour l'oral
+
+- **Graine (seed) : 471970376**, obtenue à partir de `JORDANBENIMBEZOUDJAMEN`
+- **80 freelances** générés
+- **Corrélation missions↔score : 0.83** (forte relation positive)
+- **3 profils cachés** dans les données (débutants / réguliers / vétérans) que le clustering (Q3) devra retrouver
+- **~80% d'exactitude** attendue pour la prédiction Premium/Standard (Q4)
 
 ---
 
-## 3. Modélisation réaliste du label "Premium / Standard" (Étape 4)
+## 🔧 PARTIE 2 — Détails techniques (pour Data Science & Dev)
 
-La Question 4 demande de prédire si un profil est "Premium" ou "Standard", mais l'énoncé précise que l'équipe commerciale a attribué ces étiquettes "un peu au feeling, sans méthode claire". Ton code modélise parfaitement ce comportement.
+Fichier : `data/generate_data.py`. Organisé en fonctions pures indépendantes (aucun effet de bord), donc importable et testable.
 
-- **Ce que fait le code :**
+### `name_to_seed(nom_complet) -> int`
 
-1. Il centre et réduit (standardise) les variables de performance et de missions ($z_{\text{score}}$ et $z_{\text{missions}}$) pour qu'elles aient le même poids.
-2. Il calcule un score combiné (le _logit_) où la performance compte un peu plus (`1.1`) que le volume d'activité (`0.7`), et y ajoute un bruit gaussien $\epsilon \sim \mathcal{N}(0, 1.0)$.
-3. Il passe ce score dans une fonction logistique (Sigmoid) pour obtenir une probabilité :
+Transforme le nom du chef de groupe en un nombre entier unique via un hash polynomial (base 31). Déterministe : même nom → toujours la même graine. C'est cette graine qui pilote tout le reste du hasard généré.
 
-$$P(\text{Premium}) = \frac{1}{1 + e^{-\text{logit}}}$$
+### `generate_profile_assignments(rng, n, profils) -> array`
 
-4. **Le coup de génie :** Le code applique un `flip_mask` à 8%. Cela introduit volontairement **8% d'erreurs humaines aléatoires** dans le classement. Ton modèle de classification supervisée (Question 4) ne pourra pas atteindre 100% de précision à cause de ce bruit, ce qui offrira une excellente matière à discussion dans le rapport sur les limites de la fiabilité du système.
+Tire au hasard, pour chacun des 80 freelances, un profil caché parmi les 3 définis (débutant 40%, régulier 35%, vétéran 25%). Ce tirage n'apparaît dans aucune colonne du dataset final — c'est la "vérité cachée" que la Q3 (clustering) doit retrouver sans la connaître.
+
+### `generate_ml_variables(rng, profile_assignments, profils, correlation) -> (missions, score)`
+
+Pour chaque profil, génère les valeurs de `nombre_missions` et `score_performance` via une distribution statistique à deux dimensions corrélées (loi normale bivariée). C'est cette fonction qui crée la corrélation de 0.83 entre les deux variables.
+
+### `generate_labels(rng, missions, score, flip_rate) -> array`
+
+Calcule l'étiquette Premium/Standard à partir d'une formule qui combine le score et le nombre de missions (avec un poids un peu plus fort sur le score), puis **inverse volontairement 8% des étiquettes** pour simuler les erreurs humaines de classement.
+
+### `generate_display_variables(rng, missions, score, ...) -> dict`
+
+Génère les colonnes non utilisées dans les calculs (domaine, expérience, tarif, délai, taux de réponse), en les reliant logiquement aux vraies variables pour que ça reste cohérent visuellement (ex : meilleur score → livraison plus rapide).
+
+### `build_dataset(nom_chef_groupe, n, profils) -> (dataframe, seed, profile_assignments)`
+
+**La fonction à utiliser si vous voulez régénérer les données depuis un autre script** (notebook d'analyse, backend FastAPI...). Elle enchaîne toutes les étapes ci-dessus et retourne un DataFrame pandas prêt à l'emploi. N'écrit rien sur le disque, n'affiche rien — 100% réutilisable.
+
+### `compute_diagnostics(df, profile_assignments) -> dict`
+
+Calcule les indicateurs de vérification (corrélation, répartition des labels, répartition des profils) sous forme de dictionnaire, pour que Data Science puisse les réutiliser dans son propre code sans dupliquer les calculs.
+
+### `main()`
+
+Le seul endroit du fichier qui affiche des choses dans la console et écrit le fichier CSV. C'est ce qui s'exécute quand on lance `python generate_data.py` directement.
 
 ---
 
-## 4. Enrichissement des données pour la plateforme (Étape 5)
+## ➡️ PARTIE 3 — Comment chaque pôle doit utiliser ça
 
-Ces variables supplémentaires ne serviront pas aux modèles de Machine Learning de base, mais elles rendent le jeu de données extrêmement crédible pour la "conception de la plateforme" confiée à ton équipe de dev.
+**Data Science** : partez directement du fichier `dataset_freelance_groupe.csv` (ou appelez `build_dataset()` si vous voulez tester avec un `n` plus grand pour vérifier la robustesse de vos méthodes). Les 2 colonnes qui vous intéressent pour les calculs sont `nombre_missions`, `score_performance`, et la cible `profil_type`.
 
-- **Domaine :** Répartition réaliste axée sur l'écosystème tech (45% Dev, 30% Design, 25% Rédaction).
-- **Tarif Horaire (FCFA) :** Modélisé intelligemment. Il dépend d'un prix de base par métier (le Dev est plus cher en moyenne que le Rédacteur), indexé sur le score de performance (+25 FCFA par point au-dessus de 50) avec une touche de fluctuation naturelle (bruit). Les tarifs sont arrondis à la dizaine supérieure et bloqués entre 1 000 et 15 000 FCFA, ce qui correspond bien au marché local.
-- **Temps de livraison & Taux de réponse :** Corrélés logiquement à la performance (un meilleur freelance répond plus vite et livre dans des délais plus courts).
+**Dev (Backend)** : vous pouvez soit lire le CSV directement (`data_loader.py`), soit importer `build_dataset()` si vous voulez régénérer à la demande depuis l'API `/api/generate`.
 
----
+**Documentation** : les chiffres clés de la Partie 1 (graine, N=80, corrélation 0.83, 3 profils, ~80% accuracy attendue) sont ce qu'il faut mettre dans la section "Annexe — génération des données personnalisées" du rapport.
 
-## 5. Vérifications et Export (Étapes 6 à 8)
-
-Le script se termine par l'assemblage dans un DataFrame Pandas, affiche des statistiques descriptives directement exploitables (la moyenne, l'écart-type, la matrice de corrélation, le décompte des labels) et exporte le tout en CSV.
+**Tout le monde, en vue de l'oral** : si le prof vous interroge sur la génération, vous devez pouvoir expliquer en une phrase : _"on a transformé le nom du chef de groupe en un nombre (la graine), qui a servi à générer aléatoirement mais de façon reproductible 80 freelances répartis en 3 profils cachés, avec une corrélation réaliste entre leurs missions et leur score, et une étiquette Premium/Standard volontairement imparfaite pour rester réaliste."_
