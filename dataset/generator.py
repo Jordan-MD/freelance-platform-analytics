@@ -2,63 +2,94 @@ import numpy as np
 from dataset import config
 from dataset.models import Freelance
 
-def generate_ml_variables(
+
+def generate_missions(
     rng: np.random.Generator,
     n: int,
-    score_mean: float,
-    score_std: float,
     missions_mean: float,
     missions_std: float,
-    correlation: float,
-) -> tuple[np.ndarray, np.ndarray]:
+    missions_min: int,
+    missions_max: int,
+) -> np.ndarray:
+    """
+    Génère le nombre de missions avec une loi normale simple.
 
-    mean = [missions_mean, score_mean]
-    cov = [
-        [missions_std ** 2, correlation * missions_std * score_std],
-        [correlation * missions_std * score_std, score_std ** 2],
-    ]
-    echantillon = rng.multivariate_normal(mean, cov, size=n)
+    On arrondit pour obtenir des nombres entiers, puis on borne les valeurs
+    pour éviter des missions impossibles ou trop extrêmes.
+    """
+    missions = rng.normal(missions_mean, missions_std, size=n)
+    missions = np.round(missions)
+    missions = np.clip(missions, missions_min, missions_max)
+    return missions.astype(int)
 
-    missions = np.clip(np.round(echantillon[:, 0]), 1, 150).astype(int)
-    score = np.clip(np.round(echantillon[:, 1], 1), 0, 100)
-    return missions, score
+
+def generate_scores(
+    rng: np.random.Generator,
+    missions: np.ndarray,
+    base_score: float,
+    mission_influence: float,
+    noise_std: float,
+    score_min: int,
+    score_max: int,
+) -> np.ndarray:
+    """
+    Calcule le score à partir des missions avec une formule linéaire lisible.
+
+    Le bruit gaussien rend les données réalistes : deux freelances avec le
+    même nombre de missions ne doivent pas forcément avoir le même score.
+    """
+    bruit = rng.normal(0, noise_std, size=len(missions))
+    score = base_score + missions * mission_influence + bruit
+    score = np.clip(score, score_min, score_max)
+    return np.round(score, 1)
 
 
 def generate_labels(
     rng: np.random.Generator,
-    missions: np.ndarray,
     score: np.ndarray,
-    weight_score: float,
-    weight_missions: float,
+    threshold: float,
+    noise_std: float,
     flip_rate: float,
 ) -> np.ndarray:
+    """
+    Attribue le profil avec une règle simple basée sur un seuil.
 
+    L'indice Premium peut recevoir un bruit configurable. Ensuite, quelques
+    étiquettes sont inversées pour éviter une classification parfaite à 100%.
+    """
     n = len(score)
-    score_norm = (score - score.mean()) / score.std()
-    missions_norm = (missions - missions.mean()) / missions.std()
+    indice_premium = score + rng.normal(0, noise_std, size=n)
+    label = np.where(indice_premium >= threshold, "Premium", "Standard")
 
-    bruit = rng.normal(0, 1.0, size=n)
-    logit = weight_score * score_norm + weight_missions * missions_norm + bruit
-    proba_premium = 1 / (1 + np.exp(-logit))
-    label = np.where(proba_premium > 0.5, "Premium", "Standard")
+    nombre_erreurs = round(n * flip_rate)
+    indices_erreurs = rng.choice(n, size=nombre_erreurs, replace=False)
 
-    flip_mask = rng.random(n) < flip_rate
     label = label.copy()
-    label[flip_mask] = np.where(label[flip_mask] == "Premium", "Standard", "Premium")
+    label[indices_erreurs] = np.where(
+        label[indices_erreurs] == "Premium",
+        "Standard",
+        "Premium",
+    )
     return label
 
 
 def generate_freelances(rng: np.random.Generator, n: int = config.N) -> list[Freelance]:
 
-    missions, score = generate_ml_variables(
+    missions = generate_missions(
         rng, n,
-        config.SCORE_MEAN, config.SCORE_STD,
         config.MISSIONS_MEAN, config.MISSIONS_STD,
-        config.CORRELATION,
+        config.MISSIONS_MIN, config.MISSIONS_MAX,
+    )
+    score = generate_scores(
+        rng, missions,
+        config.BASE_SCORE, config.MISSION_INFLUENCE,
+        config.SCORE_NOISE_STD,
+        config.SCORE_MIN, config.SCORE_MAX,
     )
     labels = generate_labels(
-        rng, missions, score,
-        config.WEIGHT_SCORE, config.WEIGHT_MISSIONS, config.LABEL_FLIP_RATE,
+        rng, score,
+        config.PREMIUM_THRESHOLD, config.PREMIUM_NOISE_STD,
+        config.LABEL_FLIP_RATE,
     )
 
     return [

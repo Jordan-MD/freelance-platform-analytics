@@ -8,6 +8,15 @@ from dataset.models import Freelance
 def valider(freelances: list[Freelance]) -> tuple[bool, list[str]]:
     erreurs = []
 
+    if len(freelances) != config.N:
+        erreurs.append(
+            f"nombre de freelances incorrect ({len(freelances)} au lieu de {config.N})"
+        )
+
+    ids = [f.id for f in freelances]
+    if len(ids) != len(set(ids)):
+        erreurs.append("identifiants non uniques")
+
     if any(f.nombre_mission < 0 for f in freelances):
         erreurs.append("valeur négative détectée (nombre_mission)")
 
@@ -26,8 +35,10 @@ def valider(freelances: list[Freelance]) -> tuple[bool, list[str]]:
     missions = np.array([f.nombre_mission for f in freelances])
     scores = np.array([f.score_performance for f in freelances])
     correlation = float(np.corrcoef(missions, scores)[0, 1])
-    if correlation <= 0:
-        erreurs.append(f"corrélation non positive ({correlation:.3f})")
+    if correlation < config.MIN_CORRELATION:
+        erreurs.append(
+            f"corrélation trop faible ({correlation:.3f}, minimum attendu {config.MIN_CORRELATION:.2f})"
+        )
 
     return (len(erreurs) == 0, erreurs)
 

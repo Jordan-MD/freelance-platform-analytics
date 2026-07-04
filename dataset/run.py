@@ -2,13 +2,14 @@ import os
 import sys
 import numpy as np
 
+# Ajouter le dossier parent au chemin de recherche pour permettre les imports absolus
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from dataset import config
 from dataset.seed import generer_graine_groupe
 from dataset.validator import generer_dataset_valide
 from dataset.exporter import export_csv
 
-# Ajouter le dossier parent au chemin de recherche pour permettre les imports absolus
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def main() -> None:
     graine = generer_graine_groupe(config.NOM_CHEF_GROUPE)

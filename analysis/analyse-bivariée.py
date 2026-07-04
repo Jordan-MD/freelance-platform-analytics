@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 # Le script est dans analysis/ml/, le CSV est dans data/ à la racine du projet
 # => on remonte de deux niveaux avant de redescendre dans data/
 script_dir = os.path.dirname(os.path.abspath(__file__))
-csv_path = os.path.join(script_dir, "..", "data", "dataset_freelance_groupe.csv")
+csv_path = os.path.join(script_dir, "..", "dataset", "dataset_freelance_groupe.csv")
 csv_path = os.path.normpath(csv_path)
 
 try:
