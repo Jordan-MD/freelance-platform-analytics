@@ -1,10 +1,14 @@
+import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # 1. CHARGEMENT DES DONNÉES 
-df = pd.read_csv("../dataset/dataset_freelance_groupe.csv")
-
+script_dir = os.path.dirname(os.path.abspath(__file__))
+csv_path = os.path.join(script_dir,"..", "dataset", "dataset_freelance_groupe.csv")
+csv_path = os.path.normpath(csv_path)
+df = pd.read_csv(csv_path)
+printf("Données chargées !")
 
 #  2. CALCULS STATISTIQUES (La répartition)
 score = df["score_performance"]
@@ -59,4 +63,8 @@ ax_hist.legend()
 
 # On affiche le tout
 plt.tight_layout()
+output_path = os.path.join(script_dir, "graphique_analyse_univariee.png")
+plt.savefig(output_path, dpi=300)
+print(f"Graphique sauvegardé avec succès sous : {output_path}")
+
 plt.show()
