@@ -8,7 +8,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 csv_path = os.path.join(script_dir,"..", "dataset", "dataset_freelance_groupe.csv")
 csv_path = os.path.normpath(csv_path)
 df = pd.read_csv(csv_path)
-printf("Données chargées !")
+print("Données chargées !")
 
 #  2. CALCULS STATISTIQUES (La répartition)
 score = df["score_performance"]
