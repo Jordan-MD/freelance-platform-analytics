@@ -4,7 +4,7 @@ import seaborn as sns
 
 # --- 1. CHARGEMENT DES DONNÉES ---
 # Le fichier CSV doit être dans le même dossier que ce notebook
-df = pd.read_csv("dataset_freelance_groupe.csv")
+df = pd.read_csv("../dataset/dataset_freelance_groupe.csv")
 
 
 # --- 2. CALCULS STATISTIQUES (La répartition) ---
