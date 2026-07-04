@@ -2,12 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# --- 1. CHARGEMENT DES DONNÉES ---
-# Le fichier CSV doit être dans le même dossier que ce notebook
+# 1. CHARGEMENT DES DONNÉES 
 df = pd.read_csv("../dataset/dataset_freelance_groupe.csv")
 
 
-# --- 2. CALCULS STATISTIQUES (La répartition) ---
+#  2. CALCULS STATISTIQUES (La répartition)
 score = df["score_performance"]
 
 moyenne = score.mean()
@@ -16,7 +15,7 @@ ecart_type = score.std()
 min_val = score.min()
 max_val = score.max()
 
-# --- 3. DÉTECTION DES CAS EXTRÊMES (Valeurs aberrantes) ---
+# 3. DÉTECTION DES CAS EXTRÊMES (Valeurs aberrantes)
 # On utilise la méthode des quartiles (IQR) pour trouver les cas anormaux
 Q1 = score.quantile(0.25)
 Q3 = score.quantile(0.75)
@@ -27,7 +26,7 @@ limite_haute = Q3 + 1.5 * IQR
 # On isole les freelances qui sont en dehors de ces limites
 cas_extremes = df[(score < limite_basse) | (score > limite_haute)]
 
-# --- 4. AFFICHAGE DES RÉSULTATS TEXTUELS ---
+# 4. AFFICHAGE DES RÉSULTATS TEXTUELS 
 print(f"Total de freelances analysés : {len(score)}")
 print(f"Score moyen : {moyenne:.2f}/100")
 print(f"Score médian (le milieu) : {mediane:.2f}/100")
@@ -39,7 +38,7 @@ if len(cas_extremes) > 0:
 else:
     print("DÉTECTION : Aucun freelance ne présente de score statistiquement extrême.")
 
-# --- 5. CRÉATION DES GRAPHIQUES ---
+# 5. CRÉATION DES GRAPHIQUES
 # On crée une image avec 2 graphiques (Boxplot en haut, Histogramme en bas)
 fig, (ax_box, ax_hist) = plt.subplots(2, 1, figsize=(10, 8), gridspec_kw={"height_ratios": [1, 4]})
 sns.set_theme(style="whitegrid")
