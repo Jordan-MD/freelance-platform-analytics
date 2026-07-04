@@ -7,7 +7,7 @@ from q4_classification import analyze_q4
 from utils import export_results_json, print_section
 
 # Adaptez ce chemin vers l'emplacement de votre dataset genere (Phase 1)
-DATA_PATH = "../dataset/dataset_freelance_groupe.csv"
+DATA_PATH = "../../dataset/dataset_freelance_groupe.csv"
 
 
 def main() -> None:

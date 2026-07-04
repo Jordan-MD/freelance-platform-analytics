@@ -23,7 +23,7 @@ except FileNotFoundError:
     exit()
 
 # Définition des variables clés
-X_var = "nombre_missions"
+X_var = "nombre_mission"
 Y_var = "score_performance"
 
 # 2. CORRÉLATION DE PEARSON + TEST DE SIGNIFICATIVITÉ
@@ -81,11 +81,11 @@ erreur_type = residus.std()
 print("--- LIMITES DE L'ANTICIPATION ---")
 print(f"Plage de missions observée dans les données : [{x_min} ; {x_max}]")
 print("=> L'estimation du score à partir du nombre de missions n'est raisonnable")
-print(f"   QUE pour un freelance situé dans cette plage. En dehors (ex: un tout")
+print("   QUE pour un freelance situé dans cette plage. En dehors (ex: un tout")
 print(f"   nouveau freelance à 0 mission, ou un profil à plus de {x_max} missions),")
 print("   le modèle extrapole et devient peu fiable.")
 print(f"Erreur type des prédictions : ±{erreur_type:.1f} points de score")
-print(f"=> Même dans la plage valide, une estimation individuelle peut s'écarter")
+print("=> Même dans la plage valide, une estimation individuelle peut s'écarter")
 print(f"   du score réel de l'ordre de {erreur_type:.1f} points en moyenne : le R²")
 print(f"   de {r_deux:.2f} indique qu'une partie ({100*(1-r_deux):.0f}%) de la performance")
 print("   dépend d'autres facteurs non mesurés ici (domaine, expérience...).")
@@ -99,7 +99,7 @@ sns.scatterplot(
     data=df,
     x=X_var,
     y=Y_var,
-    hue="profil_type",
+    hue="profil",
     palette={"Premium": "#2ecc71", "Standard": "#e74c3c"},
     alpha=0.8,
     s=70,

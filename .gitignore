@@ -1,6 +1,28 @@
-# Environment virtuel
+# Virtual environment
 .venv/
+venv/
+env/
 
-# Cache
+# Python cache and compiled files
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter / notebook checkpoints
+.ipynb_checkpoints/
+
+# Editor and OS noise
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Data and output folders that are local-only
+analysis/ml/figures/
+analysis/ml/results/
+*.log

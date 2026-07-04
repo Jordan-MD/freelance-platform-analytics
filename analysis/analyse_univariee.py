@@ -38,7 +38,7 @@ print(f"Le score le plus bas est {min_val} et le plus haut est {max_val}.\n")
 
 if len(cas_extremes) > 0:
     print(f" DÉTECTION : Nous avons trouvé {len(cas_extremes)} freelance(s) avec des scores extrêmes :")
-    print(cas_extremes[["id_freelance", "score_performance", "nombre_missions"]])
+    print(cas_extremes[["id", "score_performance", "nombre_mission"]])
 else:
     print("DÉTECTION : Aucun freelance ne présente de score statistiquement extrême.")
 
