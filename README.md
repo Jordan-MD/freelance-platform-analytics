@@ -1,54 +1,76 @@
-# Plateforme Freelance — Analyse Statistique (Streamlit)
+# Plateforme Freelance — Analyse Statistique
 
-## Structure du projet
+Application Streamlit pour l'analyse des performances de 80 freelances sur une plateforme camerounaise.
 
-```
-my_project/
-├── dataset/
-│   └── dataset_freelance_groupe.csv    # Dataset généré
-│   └── dataset_generator.csv           # Générateur dataset
-├── src/
-│   ├── __init__.py
-│   ├── utils.py                        # Fonctions utilitaires (camembert)
-│   ├── q1_univariate.py                # Q1 : Statistique univariée + IQR
-│   ├── q2_bivariate.py                 # Q2 : Corrélation Pearson + Régression
-│   ├── q3_clustering.py                # Q3 : Clustering K-Means non supervisé
-│   └── q4_classification.py            # Q4 : Classification k-NN supervisée
-├── app.py                              # Point d'entrée Streamlit
-├── requirements.txt                    # Dépendances Python
-└── README.md                           # Ce fichier
-```
+## Contexte
 
-## Installation
+Une jeune entreprise camerounaise gère une plateforme web qui met en relation des freelances avec des clients. Pour chaque freelance, la plateforme dispose de :
 
-```bash
-cd my_project
-pip install -r requirements.txt
-```
+- **Score de performance** (0–100)
+- **Nombre de missions** réalisées
+- **Étiquette** : `Premium` ou `Standard`
+
+L'application répond à 4 questions métier pour optimiser l'orientation des profils.
 
 ## Lancement
 
 ```bash
+cd freelance-platform-analytics
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
-L'application s'ouvre automatiquement dans le navigateur à `http://localhost:8501`.
+L'application s'ouvre à `http://localhost:8501`.
 
-## Navigation
+## Questions d'analyse
 
-| Page                      | Contenu                                                                |
-| ------------------------- | ---------------------------------------------------------------------- |
-| **Accueil**               | Vue d'ensemble, KPIs, aperçu du dataset, téléchargement CSV            |
-| **Q1 — Répartition**      | Distribution des scores, boxplot, détection des outliers (IQR)         |
-| **Q2 — Corrélation**      | Nuage de points, régression linéaire, simulateur d'anticipation        |
-| **Q3 — Groupes naturels** | Méthode du coude, silhouette, clusters K-Means, fiches profil          |
-| **Q4 — Automatisation**   | Matrice de confusion k-NN, simulateur de prédiction, risque commercial |
+| Question | Page | Méthode |
+|----------|------|---------|
+| Comment se répartit la performance ? Y a-t-il des cas extrêmes ? | Q1 — Répartition | Univariée, boxplot, IQR, Z-score |
+| Existe-t-il un lien entre activité et performance ? | Q2 — Corrélation | Pearson, régression linéaire, p-value |
+| Mes données révèlent-elles des groupes naturels ? | Q3 — Groupes naturels | K-Means, silhouette, coude |
+| Peut-on automatiser l'orientation dès l'inscription ? | Q4 — Automatisation | k-NN, matrice de confusion, F1-score |
 
-## Architecture des modules
+## Résultats clés
 
-| Fichier                | Méthode exposée                                    | Retour                                                      |
-| ---------------------- | -------------------------------------------------- | ----------------------------------------------------------- |
-| `q1_univariate.py`     | `analyser_performance_q1(df)`                      | `(metriques, fig_box, fig_hist, interpretation)`            |
-| `q2_bivariate.py`      | `analyser_relations_q2(df)`                        | `(metriques, fig_scatter, scenarios)`                       |
-| `q3_clustering.py`     | `analyser_profils_q3(df, features)`                | `(metriques, fig_selection, fig_clusters, interpretation)`  |
-| `q4_classification.py` | `analyser_classification_q4(df, features, target)` | `(model, scaler, metriques, fig_confusion, interpretation)` |
+| Indicateur | Valeur | Interprétation |
+|------------|--------|----------------|
+| Moyenne performance | 69.7 | Bonne performance globale |
+| Corrélation Pearson | 0.673 | Lien significatif missions ↔ performance (p < 0.001) |
+| R² | 0.453 | 45% de la performance expliquée par les missions |
+| Clusters K-Means | 2 groupes | Silhouette = 0.43 (qualité correcte) |
+| Accuracy k-NN | 71% | Bonne prédiction Premium/Standard |
+| k optimal | 6 (cross-validation 5-fold) | Meilleur compromis biais-variance |
+
+## Limites du modèle
+
+- Les 80 freelances sont **générés par une formule** (données synthétiques, pas de vraies activités)
+- Le lien missions ↔ performance est **injecté artificiellement**
+- Les étiquettes Premium/Standard sont calculées par une **formule**, pas par des commerciaux
+
+**Recommandation** : Collecter les vraies données de la plateforme et ré-entraîner les algorithmes.
+
+## Structure du projet
+
+```
+freelance-platform-analytics/
+├── dataset/
+│   ├── dataset_freelance_groupe.csv    # 80 freelances (id, score, missions, profil)
+│   └── dataset_generator.py           # Générateur (graine déterministe)
+├── src/
+│   ├── q1_univariate.py               # Univariée + Z-score + IQR
+│   ├── q2_bivariate.py                # Bivariée + Pearson + régression
+│   ├── q3_clustering.py               # K-Means + silhouette + coude
+│   ├── q4_classification.py           # k-NN optimisé + F1
+│   └── utils.py                       # Fonctions utilitaires (camembert)
+├── app.py                             # Application Streamlit
+└── requirements.txt                   # Dépendances Python
+```
+
+## Technologies
+
+- **Streamlit** — Framework web data science
+- **Pandas / NumPy** — Manipulation de données
+- **Matplotlib / Seaborn** — Visualisation
+- **Scikit-learn** — Machine learning (K-Means, k-NN, cross-validation)
+- **SciPy** — Tests statistiques
