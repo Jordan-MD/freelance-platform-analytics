@@ -25,4 +25,8 @@ Thumbs.db
 # Data and output folders that are local-only
 analysis/ml/figures/
 analysis/ml/results/
-*.log
+*.loguploads/
+*.mp4
+*.pdf
+*.webm
+*.ogg
