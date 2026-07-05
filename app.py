@@ -122,10 +122,22 @@ def page_accueil(df):
             La moitié des profils sont classés Premium. Une relation modérée existe entre l\'activité (missions) 
             et la performance (r = {:.2f}), ce qui ouvre la voie à une segmentation automatique partielle. 
             Les données révèlent des groupes naturels de profils et permettent de prédire le statut Premium 
-            avec une fiabilité d\'environ 90%.
+            avec une fiabilité d'environ 71%.
         </div>
     </div>
     """.format(score_mean, corr_val), unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="warning-box">
+        <div class="warning-title">⚠️ Limites du modèle</div>
+        <div class="warning-text">
+            <strong>Données synthétiques :</strong> Les 80 freelances sont générés par une formule, pas de vraies activités.<br>
+            <strong>Corrélations injectées :</strong> Le lien missions↔performance est artificiel.<br>
+            <strong>Classification biaisée :</strong> Les étiquettes Premium/Standard viennent d'une formule, pas de commerciaux.<br><br>
+            <strong>Recommandation :</strong> Collecter les vraies données de la plateforme et ré-entraîner les algorithmes.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────
 # PAGE : Q1 — RÉPARTITION
@@ -184,6 +196,19 @@ def page_q1(df):
         - Limites : [{limite_basse:.2f} ; {limite_haute:.2f}]  
         Un freelance est considéré comme extrême si son score est en dehors de cet intervalle.
         """)
+
+    with st.expander("🔬 Détails techniques — Z-score"):
+        z_scores = metriques["z_scores"]
+        st.markdown(f"""
+        **Z-score** : Éloignement à la moyenne en écarts-types.
+        - |Z| > 2 → atypique (environ 5% de la population)
+        - |Z| > 3 → extrême (environ 0.3% de la population)
+        - **Profils avec |Z| > 3 :** {metriques["nb_outliers_zscore"]}
+        """)
+        df_z = df[["id", "score_performance", "nombre_mission", "profil"]].copy()
+        df_z["Z-score"] = z_scores.round(2)
+        df_z["|Z| > 3"] = df_z["Z-score"].abs() > 3
+        st.dataframe(df_z, use_container_width=True)
 
 # ─────────────────────────────────────────────────────────
 # PAGE : Q2 — CORRÉLATION
@@ -353,7 +378,7 @@ def page_q4(df):
     st.markdown('<div class="main-header">Q4 — Puis-je automatiser Premium vs Standard ?</div>', unsafe_allow_html=True)
     st.markdown('<div class="sub-header">Classification supervisée — k-NN et évaluation du risque commercial</div>', unsafe_allow_html=True)
 
-    model, scaler, metriques, fig_confusion, interpretation = q4_classification.analyser_classification_q4(df)
+    model, scaler, metriques, fig_confusion, fig_k, interpretation = q4_classification.analyser_classification_q4(df)
 
     if model is None:
         st.error(interpretation)
@@ -361,20 +386,29 @@ def page_q4(df):
 
     acc = metriques["accuracy"]
     k_utilise = metriques["k_utilise"]
+    precision = metriques["precision"]
+    recall = metriques["recall"]
+    f1 = metriques["f1"]
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
-        st.markdown(f'<div class="kpi-card"><div class="kpi-label">Exactitude (Accuracy)</div><div class="kpi-value" style="color:#3b82f6;">{acc*100:.1f}%</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="kpi-card"><div class="kpi-label">Accuracy</div><div class="kpi-value" style="color:#3b82f6;">{acc*100:.1f}%</div></div>', unsafe_allow_html=True)
     with c2:
-        st.markdown(f'<div class="kpi-card"><div class="kpi-label">Algorithme</div><div class="kpi-value" style="font-size:1.3rem;">k-NN</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="kpi-card"><div class="kpi-label">Précision</div><div class="kpi-value">{precision*100:.1f}%</div></div>', unsafe_allow_html=True)
     with c3:
-        st.markdown(f'<div class="kpi-card"><div class="kpi-label">Voisins (k)</div><div class="kpi-value">{k_utilise}</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="kpi-card"><div class="kpi-label">Rappel</div><div class="kpi-value">{recall*100:.1f}%</div></div>', unsafe_allow_html=True)
+    with c4:
+        st.markdown(f'<div class="kpi-card"><div class="kpi-label">F1-score</div><div class="kpi-value">{f1*100:.1f}%</div></div>', unsafe_allow_html=True)
+    with c5:
+        st.markdown(f'<div class="kpi-card"><div class="kpi-label">k optimal</div><div class="kpi-value">{k_utilise}</div></div>', unsafe_allow_html=True)
 
     col_left, col_right = st.columns([3, 2])
 
     with col_left:
         st.markdown('<div class="section-title">Matrice de confusion</div>', unsafe_allow_html=True)
         st.pyplot(fig_confusion, use_container_width=True)
+        st.markdown('<div class="section-title">Optimisation de k</div>', unsafe_allow_html=True)
+        st.pyplot(fig_k, use_container_width=True)
 
     with col_right:
         st.markdown('<div class="section-title">🎛️ Simulateur d\'orientation</div>', unsafe_allow_html=True)
@@ -429,12 +463,12 @@ def page_q4(df):
 
     with st.expander("🔬 Détails techniques — k-NN"):
         st.markdown(f"""
-        **Modèle** : KNeighborsClassifier (k={k_utilise})  
+        **Modèle** : KNeighborsClassifier (k={k_utilise}, optimisé par CV 5-fold)  
         **Split** : 70% entraînement / 30% test (stratifié)  
         **Normalisation** : StandardScaler appliquée avant prédiction  
         **Variables** : score_performance, nombre_mission  
         **Cible** : profil (Premium / Standard)  
-        **Exactitude** : {acc:.3f}
+        **Exactitude** : {acc:.3f} | **Précision** : {precision:.3f} | **Rappel** : {recall:.3f} | **F1** : {f1:.3f}
         """)
 
 # ─────────────────────────────────────────────────────────

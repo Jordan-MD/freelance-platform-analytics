@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import pearsonr
@@ -27,7 +26,7 @@ def analyser_relations_q2(df):
     r_deux = modele.score(X, y)
     pente = modele.coef_[0]
     intercept = modele.intercept_
-    erreur_type = (y - modele.predict(X)).std()  # CORRECTION: error_type -> erreur_type
+    erreur_type = np.sqrt(np.sum((y - modele.predict(X))**2) / (len(y) - 2))
 
     x_min, x_max = missions.min(), missions.max()
     x_mediane_missions = int(missions.median()) # Niveau d'activité typique au cœur des données

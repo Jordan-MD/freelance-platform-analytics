@@ -17,6 +17,10 @@ def analyser_performance_q1(df):
     min_val = score.min()
     max_val = score.max()
 
+    # --- 1b. Z-SCORE PAR FREELANCE ---
+    z_scores = (score - moyenne) / ecart_type
+    outliers_zscore = df[abs(z_scores) > 3]
+
     # --- 2. DÉTECTION DES CAS EXTRÊMES (IQR) ---
     Q1 = score.quantile(0.25)
     Q3 = score.quantile(0.75)
@@ -35,7 +39,9 @@ def analyser_performance_q1(df):
         "min": min_val,
         "max": max_val,
         "iqr": IQR,
-        "nb_outliers": len(cas_extremes)
+        "nb_outliers": len(cas_extremes),
+        "z_scores": z_scores,
+        "nb_outliers_zscore": len(outliers_zscore),
     }
 
     # --- 3. LOGIQUE D'INTERPRÉTATION AUTOMATIQUE (Cas limites) ---
